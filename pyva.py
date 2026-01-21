@@ -97,7 +97,7 @@ class Lexer:
             if self.current_char in " \t":
                 self.advance()
             elif self.current_char in DIGITS:
-                tokens.append(Token(self.make_number()))
+                tokens.append(self.make_number())
             elif self.current_char == "+":
                 tokens.append(Token(TT_PLUS))
                 self.advance()
@@ -157,7 +157,7 @@ class BinaryOperationNode:
         self.left_node = left_node
         self.operator_token = operator_token
         self.right_node = right_node
-    
+
     def __repr__(self):
         return f"({self.left_node}, {self.operator_token}, {self.right_node})"
 
@@ -168,7 +168,7 @@ class BinaryOperationNode:
 class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
-        self.token_index = 1
+        self.token_index = -1
         self.advance()
     
     def advance(self):
@@ -176,18 +176,32 @@ class Parser:
         if self.token_index < len(self.tokens):
             self.current_token = self.tokens[self.token_index]
         return self.current_token
+    
+    def parse(self):
+        result = self.expression()
+        return result
 
     def factor(self):
-        token = self.current_token()
+        token = self.current_token
         if token.type in (TT_INT, TT_FLOAT):
             self.advance()
             return NumberNode(token)
 
     def term(self):
-        pass
+        return self.binary_operation(self.factor, (TT_MUL, TT_DIV))
 
     def expression(self):
-        pass
+        return self.binary_operation(self.term, (TT_PLUS, TT_MINUS))
+
+    def binary_operation(self, function, operators):
+        left = function()
+
+        while self.current_token.type in operators:
+            operator_token = self.current_token
+            self.advance()
+            right = function()
+            left = BinaryOperationNode(left, operator_token, right)
+        return left
 
 ####### 
 # RUN #
@@ -197,4 +211,11 @@ def run(file_name, text):
     lexer = Lexer(file_name, text)
     tokens, error = lexer.make_tokens()
 
-    return tokens, error
+    if error:
+        return None, error
+    
+    #Generating the Abstract Syntax Tree
+    parser = Parser(tokens)
+    ast = parser.parse()
+
+    return ast, None
