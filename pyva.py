@@ -18,7 +18,7 @@ class Error:
     
 class IllegalCharError(Error):
     def __init__(self, details):
-        super.__init__("Illegal Character Error", details)
+        super().__init__("Illegal Character Error", details)
 
 ##########
 # TOKENS #
@@ -34,7 +34,7 @@ TT_LPAREN = "LPAREN"
 TT_RPAREN = "RPAREN"
 
 class Token:
-    def __init__(self, type_, value):
+    def __init__(self, type_, value = None):
         self.type = type_
         self.value = value
 
@@ -89,7 +89,7 @@ class Lexer:
             else:
                 char = self.current_char
                 self.advance()
-                return [], IllegalCharError(f"Illegal Character found at pos: {self.pos}, \"{char}\"")
+                return [], IllegalCharError(f"Illegal character found at pos {self.pos}: \"{char}\"")
         return tokens, None
     
     def make_number(self):
@@ -104,8 +104,18 @@ class Lexer:
                 num_str += "."
             else: 
                 num_str += self.current_char
-        
+            self.advance()
         if dot_count == 0:
             return Token(TT_INT, int(num_str))
         else:
             return Token(TT_FLOAT, float(num_str))
+
+####### 
+# RUN #
+#######
+
+def run(text):
+    lexer = Lexer(text)
+    tokens, error = lexer.make_tokens()
+
+    return tokens, error
